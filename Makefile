@@ -4,6 +4,7 @@ BINDIR := bin
 SRCDIR := src
 FRONTEND_INCLUDE := frontend/include
 FRONTEND_SRCDIR := frontend/src
+COMMON_INCLUDE := common/include
 CHISEL := proc_tree.lua
 
 PKGNAME ?= debugger
@@ -11,7 +12,7 @@ PKGNAME ?= debugger
 CHISELDIR := $(DESTDIR)/usr/share/sysdig/chisels
 LOGSDIR := /var/log/$(PKGNAME)
 
-INCLUDES := $(INCLUDE) $(OBJDIR) $(FRONTEND_INCLUDE)
+INCLUDES := $(INCLUDE) $(OBJDIR) $(FRONTEND_INCLUDE) $(COMMON_INCLUDE)
 
 # variables that contain all the cpp files
 BACKEND_SRCS := $(shell find $(SRCDIR) -name "*.cpp")
