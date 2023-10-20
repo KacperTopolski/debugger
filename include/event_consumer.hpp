@@ -6,7 +6,7 @@
 namespace events {
 class event_consumer {
  public:
-  virtual int start_consuming() = 0;
+  void consume(event const&);
   virtual ~event_consumer() {}
 };
 }  // namespace events

@@ -3,20 +3,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "spdlog/spdlog.h"
-
 using namespace events;
-
-plain_event_consumer::plain_event_consumer(event_provider& provider,
-                                           pid_t root_pid)
-    : provider(provider), root_pid(root_pid) {}
-
-int plain_event_consumer::start_consuming() {
-  SPDLOG_INFO("Starting plain consumer");
-  while (consume())
-    ;
-  return 0;
-}
 
 uint64_t nanoseconds(time_point timestamp) {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -24,35 +11,60 @@ uint64_t nanoseconds(time_point timestamp) {
       .count();
 }
 
-bool plain_event_consumer::consume() {
-  std::optional<event> provided_event = provider.provide();
-  if (!provided_event.has_value()) return true;
-  event e = provided_event.value();
+void plain_event_consumer::consume(event const& e) {
   std::visit(visitor, e);
-  return true;
 }
 
-bool plain_event_consumer::event_visitor::operator()(fork_event& e) {
-  std::cout << std::setw(20) << e.timestamp << "\n";
-  return true;
+std::string unescape(std::string const& s)
+{
+  std::string result;
+  for (char c : s)
+    if (c == '\n')
+      result += "\\n";
+    else
+      result.push_back(c);
+  return result;
 }
 
-bool plain_event_consumer::event_visitor::operator()(exec_event& e) {
-  if (e.command.size() > 0)
-    std::cout << std::setw(20) << nanoseconds(e.timestamp) << "\n";
-  return true;
+void plain_event_consumer::event_visitor::operator()(fork_event const& e) {
+    std::cout 
+    << std::setw(30) << e.timestamp 
+    << std::setw(8) << e.source_pid 
+    << std::setw(6) << "FORK" 
+    << std::setw(8) << e.child_pid
+    << "\n";
 }
 
-bool plain_event_consumer::event_visitor::operator()(exit_event& e) {
-  return true;
+void plain_event_consumer::event_visitor::operator()(exec_event const& e) {
+    std::cout 
+    << std::setw(30) << e.timestamp 
+    << std::setw(8) << e.source_pid 
+    << std::setw(6) << "EXEC" 
+    << std::setw(8) << e.uid
+    << " " << unescape(e.command)
+    << "\n";
 }
 
-bool plain_event_consumer::event_visitor::operator()(write_event& e) {
-  if (e.data.size() > 0)
-    std::cout << std::setw(20) << nanoseconds(e.timestamp) << "\n";
-  return true;
+void plain_event_consumer::event_visitor::operator()(exit_event const& e) {
+    std::cout 
+    << std::setw(30) << e.timestamp 
+    << std::setw(8) << e.source_pid 
+    << std::setw(6) << "EXIT"
+    << " " << e.exit_code
+    << "\n";
 }
 
 std::string stream_name(enum write_event::stream s) {
   return s == write_event::stream::STDOUT ? "STDOUT" : "STDERR";
 }
+
+void plain_event_consumer::event_visitor::operator()(write_event const& e) {
+    std::cout 
+    << std::setw(30) << e.timestamp 
+    << std::setw(8) << e.source_pid 
+    << std::setw(6) << "WRITE"
+    << " " << stream_name(e.stream)
+    << " " << unescape(e.data)
+    << "\n";
+}
+

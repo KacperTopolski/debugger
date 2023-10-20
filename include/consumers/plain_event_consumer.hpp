@@ -6,22 +6,16 @@
 namespace events {
 class plain_event_consumer : public event_consumer {
   struct event_visitor {
-    bool operator()(fork_event& e);
-    bool operator()(exec_event& e);
-    bool operator()(exit_event& e);
-    bool operator()(write_event& e);
+    void operator()(fork_event const& e);
+    void operator()(exec_event const& e);
+    void operator()(exit_event const& e);
+    void operator()(write_event const& e);
   };
 
-  event_provider& provider;
-  pid_t root_pid;
   event_visitor visitor;
 
 
  public:
-  plain_event_consumer(event_provider& provider, pid_t root_pid);
-  int start_consuming() override;
-
- private:
-  bool consume();
+  void consume(event const&);
 };
 }  // namespace events

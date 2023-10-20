@@ -5,16 +5,24 @@ CXX := clang++
 VMLINUX := $(OBJ_DIR)/include/vmlinux.h
 TRACER_SKEL := $(OBJ_DIR)/include/tracer.skel.h
 
-INCLUDE := common $(OBJ_DIR)/include
+INCLUDE := common $(OBJ_DIR)/include include
 INCLUDE_FLAGS := $(patsubst %,-I%,$(INCLUDE))
+
+SRC_DIR := src
+SRCS := $(shell find $(SRC_DIR) -name "*.cpp")
+OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o, $(SRCS))
 
 MAIN := $(BIN_DIR)/main
 
 all: $(MAIN)
 
-$(MAIN): $(TRACER_SKEL) $(VMLINUX)
+$(MAIN): $(TRACER_SKEL) $(VMLINUX) $(OBJS)
 	@mkdir -p $(dir $@)
-	@clang++ -g -std=c++20 -Wno-c99-designator $(INCLUDE_FLAGS) src/main.cpp -lbpf -lelf -o $@
+	@clang++ -std=c++20 $(OBJS) -lbpf -lelf -o $@
+
+$(OBJS) : $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	@clang++ -std=c++20 -Wno-c99-designator $(INCLUDE_FLAGS) -c $< -o $@
 
 $(OBJ_DIR)/tracer.bpf.o : $(VMLINUX) src/backend/tracer.bpf.c
 	@mkdir -p $(dir $@)

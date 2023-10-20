@@ -1,33 +1,8 @@
-#pragma once
-
 #include <unistd.h>
 
-#include <optional>
-#include <queue>
-#include <set>
-
 #include "backend/event.h"
-#include "events.hpp"
-#include "tracer.skel.h"
-
-static int buf_process_sample(void *ctx, void *data, size_t len);
-
-class bpf_provider {
- public:
-  bpf_provider();
-  ~bpf_provider();
-  void run(char *argv[]);
-  bool is_active();
-  std::optional<events::event> provide();
-
-  friend int buf_process_sample(void *ctx, void *data, size_t len);
-
- private:
-  tracer *skel;
-  ring_buffer *buffer;
-  std::queue<events::event> messages;
-  std::set<pid_t> tracked_processes;
-};
+#include "bpf_provider.hpp"
+#include <iostream>
 
 bpf_provider::bpf_provider() {
   skel = tracer::open_and_load();
@@ -41,10 +16,10 @@ bpf_provider::~bpf_provider() {
   tracer::destroy(skel);
 };
 
-bool bpf_provider::is_active() { return !tracked_processes.empty(); }
+bool bpf_provider::is_active() { return !tracked_processes.empty() || !messages.empty(); }
 
 std::optional<events::event> bpf_provider::provide() {
-  if (messages.empty()) ring_buffer__consume(buffer);
+  if (messages.empty()) ring_buffer__poll(buffer, 100);
   if (messages.empty()) return {};
   auto result = messages.front();
   messages.pop();
@@ -66,7 +41,7 @@ void bpf_provider::run(char *argv[]) {
   }
 }
 
-static int buf_process_sample(void *ctx, void *data, size_t len) {
+int bpf_provider::buf_process_sample(void *ctx, void *data, size_t len) {
   bpf_provider *me = (bpf_provider *)ctx;
   event *e = (event *)data;
   events::event new_e;
