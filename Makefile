@@ -4,11 +4,9 @@ BINDIR := bin
 SRCDIR := src
 FRONTEND_INCLUDE := frontend/include
 FRONTEND_SRCDIR := frontend/src
-CHISEL := proc_tree.lua
 
 PKGNAME ?= debugger
 
-CHISELDIR := $(DESTDIR)/usr/share/sysdig/chisels
 LOGSDIR := /var/log/$(PKGNAME)
 
 INCLUDES := $(INCLUDE) $(OBJDIR) $(FRONTEND_INCLUDE)
@@ -62,23 +60,13 @@ TARGET := $(DESTDIR)/usr/bin
 CLANG_BPF_SYS_INCLUDES = $(shell $(CLANG) -v -E - </dev/null 2>&1 \
 	| sed -n '/<...> search starts here:/,/End of search list./{ s| \(/.*\)|-idirafter \1|p }')
 
-.PHONY: all clean chisel install
+.PHONY: all clean install
 all: $(BINDIR)/$(MAIN)
-
-install: chisel
-	@mkdir -p $(TARGET)
-	cp $(BINDIR)/$(MAIN) $(TARGET)/$(PKGNAME)
-	@echo Install complete!
 
 # cleanup
 .PHONY: clean
 clean:
 	rm -rf $(OBJDIR) $(BINDIR)
-
-# installs chisel, so that sysdig can find it
-chisel:
-	@mkdir -p $(CHISELDIR)
-	cp $(SRCDIR)/$(CHISEL) $(CHISELDIR)
 
 # create vmlinux.h
 $(OBJDIR)/$(VMLINUX):
