@@ -1,3 +1,4 @@
+// This include has to be the first one.
 #include "vmlinux.h"
 
 #include <bpf/bpf_core_read.h>
@@ -19,10 +20,15 @@ struct {
   __uint(max_entries, 256 * 1024);
 } processes __weak SEC(".maps");
 
+struct write_data {
+  const char *buf;
+  int fd;
+};
+
 struct {
   __uint(type, BPF_MAP_TYPE_HASH);
   __type(key, pid_t);
-  __type(value, char *);
+  __type(value, struct write_data);
   __uint(max_entries, 256 * 1024);
 } writes __weak SEC(".maps");
 
@@ -33,51 +39,62 @@ struct {
   __uint(max_entries, 1);
 } aux_maps __weak SEC(".maps");
 
+inline bool is_process_traced() {
+  pid_t pid = bpf_get_current_pid_tgid();
+  return bpf_map_lookup_elem(&processes, &pid) != NULL;
+}
+
 SEC("tp/sched/sched_process_exec")
 int handle_exec(struct trace_event_raw_sched_process_exec *ctx) {
-  pid_t old = ctx->old_pid;
-  pid_t new = ctx->pid;
-  int value = 0;
+  if (!is_process_traced()) return 0;
 
-  if (bpf_map_lookup_elem(&processes, &old) != NULL) {
-    bpf_map_delete_elem(&processes, &old);
-    bpf_map_update_elem(&processes, &new, &value, BPF_ANY);
-    struct exec_event *event =
-        bpf_ringbuf_reserve(&queue, sizeof(struct exec_event), 0);
-    if (event == NULL) return 0;
-    make_exec_event(event, new);
-    bpf_ringbuf_submit(event, 0);
-  }
+  pid_t pid = bpf_get_current_pid_tgid();
+
+  struct task_struct *task = (void *) bpf_get_current_task();
+  u64 args_start =  BPF_CORE_READ(task, mm, arg_start);
+  u64 args_end = BPF_CORE_READ(task, mm, arg_end);
+  if(args_end <= args_start) return 0;
+  u64 args_size = args_end - args_start;
+  if (args_size > 1024) args_size = 1024; 
+
+  u32 key = 0;
+  struct exec_event *e = bpf_map_lookup_elem(&aux_maps, &key);
+  if (e == NULL) return 0;
+
+  make_exec_event(e, pid, args_size);
+
+  if (bpf_probe_read_user(e->args, args_size, (void *) args_start)) return 0;
+  bpf_ringbuf_output(&queue, e, args_size + offsetof(struct exec_event, args), 0);
   return 0;
 }
 
 SEC("tp/sched/sched_process_fork")
 int handle_fork(struct trace_event_raw_sched_process_fork *ctx) {
+  if (!is_process_traced()) return 0;
+
   pid_t parent = ctx->parent_pid;
   pid_t child = ctx->child_pid;
   int value = 0;
 
-  if (bpf_map_lookup_elem(&processes, &parent) != NULL) {
-    bpf_map_update_elem(&processes, &child, &value, BPF_ANY);
-    struct fork_event *event =
-        bpf_ringbuf_reserve(&queue, sizeof(struct fork_event), 0);
-    if (event == NULL) return 0;
-    make_fork_event(event, parent, child);
-    bpf_ringbuf_submit(event, 0);
-  }
+  bpf_map_update_elem(&processes, &child, &value, BPF_ANY);
+  struct fork_event *event =
+      bpf_ringbuf_reserve(&queue, sizeof(struct fork_event), 0);
+  if (event == NULL) return 0;
+  make_fork_event(event, parent, child);
+  bpf_ringbuf_submit(event, 0);
   return 0;
 }
 
 SEC("tp/sched/sched_process_exit")
 int handle_exit(struct trace_event_raw_sched_process_template *ctx) {
+  if (!is_process_traced()) return 0;
   pid_t pid = ctx->pid;
-  if (bpf_map_lookup_elem(&processes, &pid) != NULL) {
-    struct exit_event *event =
-        bpf_ringbuf_reserve(&queue, sizeof(struct exit_event), 0);
-    if (event == NULL) return 0;
-    make_exit_event(event, pid);
-    bpf_ringbuf_submit(event, 0);
-  }
+  struct exit_event *event =
+      bpf_ringbuf_reserve(&queue, sizeof(struct exit_event), 0);
+  if (event == NULL) return 0;
+  struct task_struct *task = (struct task_struct *) bpf_get_current_task();
+  make_exit_event(event, pid, BPF_CORE_READ(task, exit_code));
+  bpf_ringbuf_submit(event, 0);
   bpf_map_delete_elem(&processes, &pid);
   return 0;
 }
@@ -100,12 +117,15 @@ struct write_exit_ctx {
 
 SEC("tp/syscalls/sys_enter_write")
 int handle_write_enter(struct write_enter_ctx *ctx) {
+  if (!is_process_traced()) return 0;
+
   pid_t pid = bpf_get_current_pid_tgid();
 
-  if (bpf_map_lookup_elem(&processes, &pid) == NULL) return 0;
-
-  const char *buf = ctx->buf;
-  bpf_map_update_elem(&writes, &pid, &buf, BPF_ANY);
+  struct write_data data = {
+    .buf = ctx->buf,
+    .fd = ctx->fd,
+  };
+  bpf_map_update_elem(&writes, &pid, &data, BPF_ANY);
   return 0;
 }
 
@@ -113,12 +133,12 @@ int handle_write_enter(struct write_enter_ctx *ctx) {
 
 SEC("tp/syscalls/sys_exit_write")
 int handle_write_exit(struct write_exit_ctx *ctx) {
-  pid_t pid = bpf_get_current_pid_tgid();
-  if (bpf_map_lookup_elem(&processes, &pid) == NULL) return 0;
+  if (!is_process_traced()) return 0;
 
-  char *buf = bpf_map_lookup_elem(&writes, &pid);
-  if (buf == NULL) return 0;
-  buf = *(char **)buf;
+  pid_t pid = bpf_get_current_pid_tgid();
+
+  struct write_data *data = bpf_map_lookup_elem(&writes, &pid);
+  if (data == NULL) return 0;
 
   bpf_map_delete_elem(&writes, &pid);
 
@@ -128,13 +148,14 @@ int handle_write_exit(struct write_exit_ctx *ctx) {
   if (wsize > MAX_WRITE_SIZE) wsize = MAX_WRITE_SIZE;
 
   u32 key = 0;
+
+  // Kernel correctness checker requires extra copy via auxillary array.
   struct write_event *e = bpf_map_lookup_elem(&aux_maps, &key);
   if (e == NULL) return 0;
 
-  e->type = WRITE;
-  e->proc = pid;
-  e->size = wsize;
-  if (bpf_probe_read_user(e->data, wsize, buf)) return 0;
+  make_write_event(e, pid, data->fd, wsize);
+  if (bpf_probe_read_user(e->data, wsize, data->buf)) return 0;
+
   bpf_ringbuf_output(&queue, e, wsize + offsetof(struct write_event, data), 0);
   return 0;
 }

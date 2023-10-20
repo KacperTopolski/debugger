@@ -1,8 +1,12 @@
+#include "bpf_provider.hpp"
+
+#include <sys/stat.h>
+#include <sys/sysinfo.h>
 #include <unistd.h>
 
-#include "backend/event.h"
-#include "bpf_provider.hpp"
 #include <iostream>
+
+#include "backend/event.h"
 
 bpf_provider::bpf_provider() {
   skel = tracer::open_and_load();
@@ -16,7 +20,9 @@ bpf_provider::~bpf_provider() {
   tracer::destroy(skel);
 };
 
-bool bpf_provider::is_active() { return !tracked_processes.empty() || !messages.empty(); }
+bool bpf_provider::is_active() {
+  return !tracked_processes.empty() || !messages.empty();
+}
 
 std::optional<events::event> bpf_provider::provide() {
   if (messages.empty()) ring_buffer__poll(buffer, 100);
@@ -41,42 +47,93 @@ void bpf_provider::run(char *argv[]) {
   }
 }
 
+/**
+ * The timestamps returned in events are relative to system boot time.
+ * To return meaningful timestamps we have to get boot time from kernel, which
+ * is done here.
+ */
+std::chrono::system_clock::time_point get_boot_time() {
+  struct stat kernel_proc_entry;
+  int err = stat("/proc/1", &kernel_proc_entry);
+  if (err) throw std::runtime_error("Failed to fetch last boot time");
+
+  using namespace std::chrono;
+  auto seconds_part = std::chrono::seconds{kernel_proc_entry.st_ctim.tv_sec};
+  auto nanoseconds_part =
+      std::chrono::nanoseconds{kernel_proc_entry.st_ctim.tv_nsec};
+
+  return system_clock::time_point(seconds_part + nanoseconds_part);
+}
+
+std::chrono::system_clock::time_point into_timestamp(uint64_t event_timestamp) {
+  using namespace std::chrono;
+  static auto boot_time = get_boot_time();
+  auto duration_to_event = std::chrono::nanoseconds{event_timestamp};
+  return boot_time + duration_to_event;
+}
+
+static events::write_event from(backend::write_event *e) {
+  return {
+    {
+      .source_pid = e->proc,
+      .timestamp = into_timestamp(e->timestamp),
+    },
+    .file_descriptor = e->fd,
+    .data = {e->data, static_cast<size_t>(e->size)},
+  };
+}
+
+static events::fork_event from(backend::fork_event *e) {
+  return {
+    {
+      .source_pid = e->parent,
+      .timestamp = into_timestamp(e->timestamp),
+    },
+    .child_pid = e->child,
+  };
+}
+
+static events::exit_event from(backend::exit_event *e) {
+  return {
+    {
+      .source_pid = e->proc,
+      .timestamp = into_timestamp(e->timestamp),
+    },
+    .exit_code = e->code,
+  };
+}
+
+static events::exec_event from(backend::exec_event *e) {
+  std::cout << e->args_size << std::endl;
+  return {
+    {
+      .source_pid = e->proc,
+      .timestamp = into_timestamp(e->timestamp),
+    },
+    .user_id = 0,
+    .command = {e->args, static_cast<size_t>(e->args_size)},
+  };
+}
+
+
 int bpf_provider::buf_process_sample(void *ctx, void *data, size_t len) {
-  bpf_provider *me = (bpf_provider *)ctx;
-  event *e = (event *)data;
-  events::event new_e;
+  bpf_provider *me = static_cast<bpf_provider *>(ctx);
+  backend::event *e = static_cast<backend::event *>(data);
   switch (e->type) {
-    case FORK:
+    case backend::FORK:
       me->tracked_processes.insert(e->fork.child);
-      new_e = events::fork_event{
-          {.source_pid = e->fork.parent},
-          .child_pid = e->fork.child,
-      };
+      me->messages.push(from(&(e->fork)));
       break;
-    case EXIT:
+    case backend::EXIT:
       me->tracked_processes.erase(e->exit.proc);
-      new_e = events::exit_event{
-          {.source_pid = e->exit.proc},
-          .exit_code = 0,
-      };
+      me->messages.push(from(&(e->exit)));
       break;
-    case EXEC:
-      new_e = events::exec_event{
-          {.source_pid = e->exec.proc},
-          .uid = 0,
-          .command = "",
-      };
+    case backend::EXEC:
+      me->messages.push(from(&(e->exec)));
       break;
-    case WRITE:
-      std::string data(e->write.size, ' ');
-      std::copy(e->write.data, e->write.data + e->write.size, data.begin());
-      new_e = events::write_event{
-          {.source_pid = e->write.proc},
-          .stream = events::write_event::stream::STDOUT,
-          .data = std::move(data),
-      };
+    case backend::WRITE:
+      me->messages.push(from(&(e->write)));
       break;
   }
-  me->messages.push(std::move(new_e));
   return 0;
 }

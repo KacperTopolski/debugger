@@ -5,12 +5,6 @@
 
 using namespace events;
 
-uint64_t nanoseconds(time_point timestamp) {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(
-             timestamp.time_since_epoch())
-      .count();
-}
-
 void plain_event_consumer::consume(event const& e) {
   std::visit(visitor, e);
 }
@@ -18,11 +12,14 @@ void plain_event_consumer::consume(event const& e) {
 std::string unescape(std::string const& s)
 {
   std::string result;
-  for (char c : s)
+  for (char c : s) {
     if (c == '\n')
       result += "\\n";
+    else if (c == 0)
+      result += " ";
     else
       result.push_back(c);
+  }
   return result;
 }
 
@@ -40,7 +37,7 @@ void plain_event_consumer::event_visitor::operator()(exec_event const& e) {
     << std::setw(30) << e.timestamp 
     << std::setw(8) << e.source_pid 
     << std::setw(6) << "EXEC" 
-    << std::setw(8) << e.uid
+    << std::setw(8) << e.user_id
     << " " << unescape(e.command)
     << "\n";
 }
@@ -54,17 +51,13 @@ void plain_event_consumer::event_visitor::operator()(exit_event const& e) {
     << "\n";
 }
 
-std::string stream_name(enum write_event::stream s) {
-  return s == write_event::stream::STDOUT ? "STDOUT" : "STDERR";
-}
 
 void plain_event_consumer::event_visitor::operator()(write_event const& e) {
     std::cout 
     << std::setw(30) << e.timestamp 
     << std::setw(8) << e.source_pid 
     << std::setw(6) << "WRITE"
-    << " " << stream_name(e.stream)
+    << std::setw(3) << e.file_descriptor
     << " " << unescape(e.data)
     << "\n";
 }
-

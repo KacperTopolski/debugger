@@ -1,7 +1,7 @@
 #pragma once
 
-#include "events.hpp"
 #include "event_provider.hpp"
+#include "events.hpp"
 
 namespace events {
 class event_consumer {
@@ -9,4 +9,4 @@ class event_consumer {
   void consume(event const&);
   virtual ~event_consumer() {}
 };
-}  // namespace events
+}

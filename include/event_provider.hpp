@@ -11,4 +11,4 @@ class event_provider {
   virtual std::optional<event> provide() = 0;
   virtual ~event_provider() {}
 };
-}  // namespace events
+}

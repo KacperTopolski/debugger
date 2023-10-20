@@ -19,7 +19,7 @@ namespace events {
     };
     
     struct exec_event : event_base {
-        uid_t uid; // uid czego?
+        uid_t user_id;
         std::string command;
     };
 
@@ -28,7 +28,7 @@ namespace events {
     };
 
     struct write_event : event_base {
-        enum class stream { STDOUT, STDERR } stream;       
+        int file_descriptor;
         std::string data;
     };
 
