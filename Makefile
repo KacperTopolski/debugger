@@ -24,6 +24,13 @@ $(OBJS) : $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	@clang++ -std=c++20 -Wno-c99-designator $(INCLUDE_FLAGS) -c $< -o $@
 
+# This throws warnings due to clash with previous command.
+# This is intentional because bpf_provider depends on the skeleton (unlike other sources)
+$(OBJ_DIR)/bpf_provider.o : $(SRC_DIR)/bpf_provider.cpp $(TRACER_SKEL)
+	@mkdir -p $(dir $@)
+	@clang++ -std=c++20 -Wno-c99-designator $(INCLUDE_FLAGS) -c $< -o $@
+
+
 $(OBJ_DIR)/tracer.bpf.o : $(VMLINUX) src/backend/tracer.bpf.c
 	@mkdir -p $(dir $@)
 # -g flag is really important here, not sure why
