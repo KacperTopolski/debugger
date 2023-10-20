@@ -8,7 +8,7 @@
 
 #include "backend/event.h"
 #include "events.hpp"
-#include "tracer.skel.h"
+#include "backend/tracer.skel.h"
 
 static int buf_process_sample(void *ctx, void *data, size_t len);
 

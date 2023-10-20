@@ -9,14 +9,6 @@
 #include <string>
 
 #include "bpf_provider.hpp"
-#include "tracer.skel.h"
-
-bool has_children() {
-  pid_t err;
-  while ((err = waitpid(-1, nullptr, WNOHANG)) > 0)
-    ;
-  return err == 0;
-}
 
 static void increase_memlock_limit() {
   rlimit lim{
