@@ -29,7 +29,7 @@ struct {
 struct {
   __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
   __type(key, u32);
-  __type(value, char[2048]);
+  __type(value, char[4096]);
   __uint(max_entries, 1);
 } aux_maps __weak SEC(".maps");
 
@@ -131,9 +131,8 @@ int handle_write_exit(struct write_exit_ctx *ctx) {
   struct write_event *e = bpf_map_lookup_elem(&aux_maps, &key);
   if (e == NULL) return 0;
 
-  e->type = WRITE;
-  e->proc = pid;
-  e->size = wsize;
+  make_write_event(e, pid, wsize);
+
   if (bpf_probe_read_user(e->data, wsize, buf)) return 0;
   bpf_ringbuf_output(&queue, e, wsize + offsetof(struct write_event, data), 0);
   return 0;

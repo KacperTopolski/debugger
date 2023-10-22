@@ -2,6 +2,7 @@
 
 #include "backend/event.h"
 #include "bpf_provider.hpp"
+
 #include <iostream>
 
 bpf_provider::bpf_provider() {
@@ -41,6 +42,13 @@ void bpf_provider::run(char *argv[]) {
   }
 }
 
+static std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> 
+to_time_point(unsigned long long ns) {
+  return std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>{
+    std::chrono::nanoseconds{ns}
+  };
+}
+
 int bpf_provider::buf_process_sample(void *ctx, void *data, size_t len) {
   bpf_provider *me = (bpf_provider *)ctx;
   event *e = (event *)data;
@@ -49,20 +57,29 @@ int bpf_provider::buf_process_sample(void *ctx, void *data, size_t len) {
     case FORK:
       me->tracked_processes.insert(e->fork.child);
       new_e = events::fork_event{
-          {.source_pid = e->fork.parent},
+          {
+            .source_pid = e->fork.parent,
+            .timestamp = to_time_point(e->timestamp)
+          }, 
           .child_pid = e->fork.child,
       };
       break;
     case EXIT:
       me->tracked_processes.erase(e->exit.proc);
       new_e = events::exit_event{
-          {.source_pid = e->exit.proc},
+          {
+            .source_pid = e->exit.proc,
+            .timestamp = to_time_point(e->timestamp)
+          },
           .exit_code = 0,
       };
       break;
     case EXEC:
       new_e = events::exec_event{
-          {.source_pid = e->exec.proc},
+          {
+            .source_pid = e->exec.proc,
+            .timestamp = to_time_point(e->timestamp)
+          },
           .uid = 0,
           .command = "",
       };
@@ -71,7 +88,10 @@ int bpf_provider::buf_process_sample(void *ctx, void *data, size_t len) {
       std::string data(e->write.size, ' ');
       std::copy(e->write.data, e->write.data + e->write.size, data.begin());
       new_e = events::write_event{
-          {.source_pid = e->write.proc},
+          {
+            .source_pid = e->write.proc,
+            .timestamp = to_time_point(e->timestamp)
+          },
           .stream = events::write_event::stream::STDOUT,
           .data = std::move(data),
       };
