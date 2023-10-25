@@ -104,7 +104,6 @@ static events::exit_event from(backend::exit_event *e) {
 }
 
 static events::exec_event from(backend::exec_event *e) {
-  std::cout << e->args_size << std::endl;
   return {
     {
       .source_pid = e->proc,
@@ -112,6 +111,16 @@ static events::exec_event from(backend::exec_event *e) {
     },
     .user_id = 0,
     .command = {e->args, static_cast<size_t>(e->args_size)},
+  };
+}
+
+static events::chdir_event from(backend::chdir_event *e) {
+  return {
+    {
+      .source_pid = e->proc,
+      .timestamp = into_timestamp(e->timestamp),
+    },
+    .path = {e->path, static_cast<size_t>(e->size)},
   };
 }
 
@@ -133,6 +142,9 @@ int bpf_provider::buf_process_sample(void *ctx, void *data, size_t len) {
       break;
     case backend::WRITE:
       me->messages.push(from(&(e->write)));
+      break;
+    case backend::CHDIR:
+      me->messages.push(from(&(e->chdir)));
       break;
   }
   return 0;

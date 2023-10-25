@@ -10,6 +10,7 @@ class plain_event_consumer : public event_consumer {
     void operator()(exec_event const& e);
     void operator()(exit_event const& e);
     void operator()(write_event const& e);
+    void operator()(chdir_event const& e);
   };
 
   event_visitor visitor;

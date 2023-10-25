@@ -8,7 +8,8 @@ enum event_type {
     FORK,
     EXIT,
     EXEC,
-    WRITE
+    WRITE,
+    CHDIR,
 };
 
 struct fork_event {
@@ -42,6 +43,14 @@ struct write_event {
     char data[];
 };
 
+struct chdir_event {
+    enum event_type type;
+    unsigned long long timestamp;
+    pid_t proc;
+    int size;
+    char path[];
+};
+
 union event {
     /**
      * Type is common between all event types and we add it here for memory savings.
@@ -50,6 +59,7 @@ union event {
     */
     enum event_type type;
 
+    struct chdir_event chdir;
     struct fork_event fork;
     struct exec_event exec;
     struct exit_event exit;
@@ -87,6 +97,13 @@ static inline void make_write_event(struct write_event *event, pid_t proc, int f
     event->type = WRITE;
     event->timestamp = bpf_ktime_get_ns();
     event->fd = fd;
+    event->proc = proc;
+    event->size = size;
+}
+
+static inline void make_chdir_event(struct chdir_event *event, pid_t proc, int size) {
+    event->type = CHDIR;
+    event->timestamp = bpf_ktime_get_ns();
     event->proc = proc;
     event->size = size;
 }

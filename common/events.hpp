@@ -32,6 +32,10 @@ namespace events {
         std::string data;
     };
 
+    struct chdir_event : event_base {
+        std::string path;
+    };
 
-    using event = std::variant<fork_event, exec_event, exit_event, write_event>;
+
+    using event = std::variant<fork_event, exec_event, exit_event, write_event, chdir_event>;
 }

@@ -39,6 +39,14 @@ struct {
   __uint(max_entries, 1);
 } aux_maps __weak SEC(".maps");
 
+#define MAX_PATH_COMPONENTS 20
+struct {
+  __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+  __type(key, u32);
+  __type(value, struct qstr [MAX_PATH_COMPONENTS]);
+  __uint(max_entries, 1);
+} path_storage __weak SEC(".maps");
+
 inline bool is_process_traced() {
   pid_t pid = bpf_get_current_pid_tgid();
   return bpf_map_lookup_elem(&processes, &pid) != NULL;
@@ -98,6 +106,57 @@ int handle_exit(struct trace_event_raw_sched_process_template *ctx) {
   bpf_map_delete_elem(&processes, &pid);
   return 0;
 }
+
+static inline long path_to_str(struct path *path, char *buf, int size) {
+  struct dentry *dentry = BPF_CORE_READ(path, dentry);
+  u32 key = 0;
+  struct qstr *storage = bpf_map_lookup_elem(&path_storage, &key);
+  if(storage == NULL) return -1;
+  long path_len = 0;
+  long component = 0;
+  for(; component < MAX_PATH_COMPONENTS; component++) {
+    struct dentry *parent = BPF_CORE_READ(dentry, d_parent);
+    if(dentry == parent) break;
+    storage[component] = BPF_CORE_READ(dentry, d_name);
+    path_len += storage[component].len + 1;
+    dentry = parent;
+  }
+  if(component >= MAX_PATH_COMPONENTS) return -1;
+  component--;
+  if(path_len > size) return -1;
+  char *cur = buf;
+  for(;component >= 0; component--) {
+    *(cur++) = '/';
+    struct qstr name = storage[component];
+    long ret = bpf_probe_read_kernel_str(cur, 64, name.name);
+    if(ret < 0) return -1;
+    cur += name.len;
+    if(cur >= buf + size - 64) return -1;
+  }
+  return path_len;
+}
+
+SEC("tp/syscalls/sys_exit_chdir")
+int handle_chdir_exit(void *ctx) {
+  if (!is_process_traced()) return 0;
+
+  struct task_struct *task = (void *) bpf_get_current_task();
+  struct path cwd = BPF_CORE_READ(task, fs, pwd);
+
+  u32 key = 0;
+  struct chdir_event *e = bpf_map_lookup_elem(&aux_maps, &key);
+  if (e == NULL) return 0;
+  
+  int size = path_to_str(&cwd, e->path, 1024 - offsetof(struct chdir_event, path));
+  if(size < 0) return 0;
+  if(size > 1024 - offsetof(struct chdir_event, path)) return 0;
+
+  make_chdir_event(e, BPF_CORE_READ(task, pid), size);
+
+  bpf_ringbuf_output(&queue, e, size + offsetof(struct chdir_event, path), 0);
+  return 0;
+}
+
 
 // from /sys/kernel/debug/tracing/events/syscalls/sys_enter_write/format
 struct write_enter_ctx {

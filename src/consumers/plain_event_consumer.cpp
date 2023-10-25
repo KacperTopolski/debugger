@@ -61,3 +61,12 @@ void plain_event_consumer::event_visitor::operator()(write_event const& e) {
     << " " << unescape(e.data)
     << "\n";
 }
+
+void plain_event_consumer::event_visitor::operator()(chdir_event const& e) {
+    std::cout 
+    << std::setw(30) << e.timestamp 
+    << std::setw(8) << e.source_pid 
+    << std::setw(6) << "CHDIR"
+    << " " << unescape(e.path)
+    << "\n";
+}
