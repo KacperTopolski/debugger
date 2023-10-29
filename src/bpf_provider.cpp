@@ -13,7 +13,6 @@
 void static_init() {
   static bool called = false;
   if (called) return;
-  called = true;
 
   if (geteuid())
     throw std::runtime_error{"This program should be run with sudo privileges"};
@@ -25,6 +24,8 @@ void static_init() {
 
   if (setrlimit(RLIMIT_MEMLOCK, &lim))
     throw std::runtime_error{"Failed to increase RLIMIT_MEMLOCK"};
+
+  called = true;
 }
 
 bpf_provider::bpf_provider() {
@@ -59,8 +60,8 @@ void bpf_provider::run(char *argv[]) {
 
   if (child == 0) {
     pid_t pid = getpid();
-    bpf_map__update_elem(skel->maps.processes, &pid, sizeof(pid), &value,
-                         sizeof(value), BPF_ANY);
+    // bpf_map__update_elem(skel->maps.processes, &pid, sizeof(pid), &value,
+    //                      sizeof(value), BPF_ANY);
     execvp(argv[0], argv);
     throw std::runtime_error{"execvp() failed"};
   } else {

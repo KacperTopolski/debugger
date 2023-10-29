@@ -6,8 +6,6 @@ jobs:
     steps:
       - name: Install dependencies
         run: sudo apt-get install libbpf-dev googletest clang-15
-      - name: Clang version
-        run: clang++-15 -v
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Build test binary
