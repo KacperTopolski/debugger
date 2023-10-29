@@ -34,7 +34,7 @@ $(OBJ_DIR)/$(SRC_DIR)/bpf_provider.o : $(SRC_DIR)/bpf_provider.cpp $(TRACER_SKEL
 $(OBJ_DIR)/$(SRC_DIR)/tracer.bpf.o : $(VMLINUX) $(SRC_DIR)/backend/tracer.bpf.c
 	@mkdir -p $(dir $@)
 # -g flag is really important here, not sure why
-	clang -g -I$(OBJ_DIR)/include -O3 -target bpf -D__TARGET_ARCH_x86_64 -c $(SRC_DIR)/backend/tracer.bpf.c -o $@
+	clang-15 -g -I$(OBJ_DIR)/include -O3 -target bpf -D__TARGET_ARCH_x86_64 -c $(SRC_DIR)/backend/tracer.bpf.c -o $@
 
 
 $(TRACER_SKEL): $(OBJ_DIR)/$(SRC_DIR)/tracer.bpf.o
