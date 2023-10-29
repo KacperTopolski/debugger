@@ -36,7 +36,7 @@ std::cout << __FILE__ << ":" << __LINE__ << std::endl;
   int err;
   char errorstr[100];
   skel = tracer::open_and_load();
-  libbpf_strerror(errno, errorstr, 100);
+  libbpf_strerror(-errno, errorstr, 100);
 std::cout << errorstr << std::endl;
 std::cout << __FILE__ << ":" << __LINE__ << std::endl;
   tracer::attach(skel);
