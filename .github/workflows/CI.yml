@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install dependencies
-        run: sudo apt-get install libbpf-dev googletest clang
+        run: sudo apt-get install libbpf-dev googletest clang-15
       - name: Clang version
         run: clang++ -v
       - name: Checkout code
