@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install dependencies
-        run: sudo apt-get install libgtest-dev clang-15
+        run: sudo apt-get install libgtest-dev libelf-dev clang-15
         # run: sudo apt-get install libbpf-dev libgtest-dev clang-15
       - name: Install libbpf
         run: bash -c "git clone https://github.com/libbpf/libbpf; cd libbpf/src; PKG_CONFIG_PATH=/build/root/lib64/pkgconfig DESTDIR=/build/root make install; "
