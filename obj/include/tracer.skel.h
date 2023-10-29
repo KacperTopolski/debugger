@@ -62,19 +62,35 @@ tracer__open_opts(const struct bpf_object_open_opts *opts)
 	struct tracer *obj;
 	int err;
 
+	#ifdef __cplusplus
+	std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+	#endif
+
 	obj = (struct tracer *)calloc(1, sizeof(*obj));
 	if (!obj) {
 		errno = ENOMEM;
 		return NULL;
 	}
 
+	#ifdef __cplusplus
+	std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+	#endif
+
 	err = tracer__create_skeleton(obj);
 	if (err)
 		goto err_out;
 
+	#ifdef __cplusplus
+	std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+	#endif
+
 	err = bpf_object__open_skeleton(obj->skeleton, opts);
 	if (err)
 		goto err_out;
+
+	#ifdef __cplusplus
+	std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+	#endif
 
 	return obj;
 err_out:
