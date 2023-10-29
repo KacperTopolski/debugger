@@ -117,15 +117,15 @@ struct write_exit_ctx {
 
 SEC("tp/syscalls/sys_enter_write")
 int handle_write_enter(struct write_enter_ctx *ctx) {
-  if (!is_process_traced()) return 0;
+  // if (!is_process_traced()) return 0;
 
-  pid_t pid = bpf_get_current_pid_tgid();
+  // pid_t pid = bpf_get_current_pid_tgid();
 
-  struct write_data data = {
-    .buf = ctx->buf,
-    .fd = ctx->fd,
-  };
-  bpf_map_update_elem(&writes, &pid, &data, BPF_ANY);
+  // struct write_data data = {
+  //   .buf = ctx->buf,
+  //   .fd = ctx->fd,
+  // };
+  // bpf_map_update_elem(&writes, &pid, &data, BPF_ANY);
   return 0;
 }
 
@@ -133,29 +133,29 @@ int handle_write_enter(struct write_enter_ctx *ctx) {
 
 SEC("tp/syscalls/sys_exit_write")
 int handle_write_exit(struct write_exit_ctx *ctx) {
-  if (!is_process_traced()) return 0;
+  // if (!is_process_traced()) return 0;
 
-  pid_t pid = bpf_get_current_pid_tgid();
+  // pid_t pid = bpf_get_current_pid_tgid();
 
-  struct write_data *data = bpf_map_lookup_elem(&writes, &pid);
-  if (data == NULL) return 0;
+  // struct write_data *data = bpf_map_lookup_elem(&writes, &pid);
+  // if (data == NULL) return 0;
 
-  bpf_map_delete_elem(&writes, &pid);
+  // bpf_map_delete_elem(&writes, &pid);
 
-  if (ctx->ret < 0) return 0;
+  // if (ctx->ret < 0) return 0;
 
-  size_t wsize = ctx->ret;
-  if (wsize > MAX_WRITE_SIZE) wsize = MAX_WRITE_SIZE;
+  // size_t wsize = ctx->ret;
+  // if (wsize > MAX_WRITE_SIZE) wsize = MAX_WRITE_SIZE;
 
-  u32 key = 0;
+  // u32 key = 0;
 
-  // Kernel correctness checker requires extra copy via auxillary array.
-  struct write_event *e = bpf_map_lookup_elem(&aux_maps, &key);
-  if (e == NULL) return 0;
+  // // Kernel correctness checker requires extra copy via auxillary array.
+  // struct write_event *e = bpf_map_lookup_elem(&aux_maps, &key);
+  // if (e == NULL) return 0;
 
-  make_write_event(e, pid, data->fd, wsize);
-  if (bpf_probe_read_user(e->data, wsize, data->buf)) return 0;
+  // make_write_event(e, pid, data->fd, wsize);
+  // if (bpf_probe_read_user(e->data, wsize, data->buf)) return 0;
 
-  bpf_ringbuf_output(&queue, e, wsize + offsetof(struct write_event, data), 0);
+  // bpf_ringbuf_output(&queue, e, wsize + offsetof(struct write_event, data), 0);
   return 0;
 }
