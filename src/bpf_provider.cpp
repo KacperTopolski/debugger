@@ -70,8 +70,8 @@ void bpf_provider::run(char *argv[]) {
 
   if (child == 0) {
     pid_t pid = getpid();
-    // bpf_map__update_elem(skel->maps.processes, &pid, sizeof(pid), &value,
-    //                      sizeof(value), BPF_ANY);
+    bpf_map__update_elem(skel->maps.processes, &pid, sizeof(pid), &value,
+                         sizeof(value), BPF_ANY);
     execvp(argv[0], argv);
     throw std::runtime_error{"execvp() failed"};
   } else {
