@@ -7,7 +7,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Install dependencies
-        run: sudo apt-get -y install bpf clang compiler-rt llvm llvm-libs spdlog tclap gtest
+        run: sudo apt-get -y install bpfcc-tools linux-headers-$(uname -r)
       - name: Build test binary
         run: make bin/test
       - name: Run tests
