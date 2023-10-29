@@ -6,15 +6,8 @@ jobs:
     steps:
       - name: Install dependencies
         run: sudo apt-get install libbpf-dev googletest clang-15
-      # - name: Set clang++-15 as default
-      #   run: sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-15 100
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v1
-        with:
-          version: "10.0"
-          directory: ${{ runner.temp }}/llvm
       - name: Clang version
-        run: clang++ -v
+        run: clang++-15 -v
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Build test binary
