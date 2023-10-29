@@ -4,7 +4,7 @@ BIN_DIR := bin
 VMLINUX := $(OBJ_DIR)/include/vmlinux.h
 TRACER_SKEL := $(OBJ_DIR)/include/tracer.skel.h
 
-INCLUDE := common $(OBJ_DIR)/include include /usr/src/googletest/googletest/include
+INCLUDE := common $(OBJ_DIR)/include include
 INCLUDE_FLAGS := $(patsubst %,-I%,$(INCLUDE))
 
 # We exclude main.cpp from SRCS because otherwise we would have
