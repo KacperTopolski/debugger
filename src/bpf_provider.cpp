@@ -21,6 +21,7 @@ void static_init() {
       .rlim_cur = RLIM_INFINITY,
       .rlim_max = RLIM_INFINITY,
   };
+std::cout << __FILE << ":" << __LINE__ << std::endl;
 
   if (setrlimit(RLIMIT_MEMLOCK, &lim))
     throw std::runtime_error{"Failed to increase RLIMIT_MEMLOCK"};
@@ -29,12 +30,16 @@ void static_init() {
 }
 
 bpf_provider::bpf_provider() {
+std::cout << __FILE << ":" << __LINE__ << std::endl;
   static_init();
-
+std::cout << __FILE << ":" << __LINE__ << std::endl;
   skel = tracer::open_and_load();
+std::cout << __FILE << ":" << __LINE__ << std::endl;
   tracer::attach(skel);
+std::cout << __FILE << ":" << __LINE__ << std::endl;
   buffer = ring_buffer__new(bpf_map__fd(skel->maps.queue), buf_process_sample,
                             this, nullptr);
+std::cout << __FILE << ":" << __LINE__ << std::endl;
 };
 
 bpf_provider::~bpf_provider() {
