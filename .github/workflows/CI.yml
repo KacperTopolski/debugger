@@ -7,7 +7,7 @@ jobs:
       # - name: Checkout code
       #   uses: actions/checkout@v3
       - name: Install dependencies
-        run: sudo apt-get -y libbpf-dev
+        run: sudo apt-get install libbpf-dev
       # - name: Build test binary
       #   run: make bin/test
       # - name: Run tests
