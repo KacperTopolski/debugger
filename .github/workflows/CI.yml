@@ -6,6 +6,10 @@ jobs:
     steps:
       - name: Install dependencies
         run: sudo apt-get install libbpf-dev libgtest-dev clang-15
+      - name: ls som
+        run: ls /sys/kernel/debug/tracing/available_events
+      - name: ls som2
+        run: ls /sys/kernel/tracing/events
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Build test binary
