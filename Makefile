@@ -18,28 +18,28 @@ all: $(TARGET)
 
 $(TARGET): $(TRACER_SKEL) $(VMLINUX) $(OBJS)
 	@mkdir -p $(dir $@)
-	clang++-15 -std=c++20 $(OBJS) $(SRC_DIR)/main.cpp $(INCLUDE_FLAGS) -lbpf -lelf -o $@
+	clang++ -std=c++20 $(OBJS) $(SRC_DIR)/main.cpp $(INCLUDE_FLAGS) -lbpf -lelf -o $@
 
 $(OBJS) : $(OBJ_DIR)/%.o : %.cpp
 	@mkdir -p $(dir $@)
-	clang++-15 -std=c++20 $(INCLUDE_FLAGS) -c $< -o $@
+	clang++ -std=c++20 $(INCLUDE_FLAGS) -c $< -o $@
 
 # This throws warnings due to clash with previous command.
 # This is intentional because bpf_provider depends on the skeleton (unlike other sources)
 $(OBJ_DIR)/$(SRC_DIR)/bpf_provider.o : $(SRC_DIR)/bpf_provider.cpp $(TRACER_SKEL)
 	@mkdir -p $(dir $@)
-	clang++-15 -std=c++20 -Wno-c99-designator $(INCLUDE_FLAGS) -c $< -o $@
+	clang++ -std=c++20 -Wno-c99-designator $(INCLUDE_FLAGS) -c $< -o $@
 
 
 $(OBJ_DIR)/$(SRC_DIR)/tracer.bpf.o : $(VMLINUX) $(SRC_DIR)/backend/tracer.bpf.c
 	@mkdir -p $(dir $@)
 # -g flag is really important here, not sure why
-	clang -g -I$(OBJ_DIR)/include -O3 -target bpf -D__TARGET_ARCH_x86_64 -c $(SRC_DIR)/backend/tracer.bpf.c -o $@
+	# clang -g -I$(OBJ_DIR)/include -O3 -target bpf -D__TARGET_ARCH_x86_64 -c $(SRC_DIR)/backend/tracer.bpf.c -o $@
 
 
 $(TRACER_SKEL): $(OBJ_DIR)/$(SRC_DIR)/tracer.bpf.o
 	@mkdir -p $(dir $@)
-	bpftool gen skeleton $(OBJ_DIR)/$(SRC_DIR)/tracer.bpf.o name tracer > $@
+	# bpftool gen skeleton $(OBJ_DIR)/$(SRC_DIR)/tracer.bpf.o name tracer > $@
 
 $(VMLINUX):
 	@mkdir -p $(dir $@)
@@ -63,15 +63,15 @@ test : $(TEST_TARGET)
 
 $(TEST_TARGET) : $(TEST_OBJS) $(OBJS) $(TARGET) $(PROGRAM_TARGETS)
 	@mkdir -p $(dir $@)
-	clang++-15 -std=c++20 $(TEST_OBJS) $(OBJS) -lbpf -lelf -lgtest -lgtest_main -pthread -o $@
+	clang++ -std=c++20 $(TEST_OBJS) $(OBJS) -lbpf -lelf -lgtest -lgtest_main -pthread -o $@
 
 $(TEST_OBJS) : $(OBJ_DIR)/%.o : %.cpp $(OBJ_DIR)/$(SRC_DIR)/bpf_provider.o
 	@mkdir -p $(dir $@)
-	clang++-15 -std=c++20 $(INCLUDE_FLAGS) $(PATH_DEFINES) -c $< -o $@
+	clang++ -std=c++20 $(INCLUDE_FLAGS) $(PATH_DEFINES) -c $< -o $@
 
 $(PROGRAM_TARGETS) : $(BIN_DIR)/programs/% : $(PROGRAM_SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	clang++-15 -std=c++20 $< -o $@
+	clang++ -std=c++20 $< -o $@
 
 .PHONY: clean clean_fast test all
 clean:
