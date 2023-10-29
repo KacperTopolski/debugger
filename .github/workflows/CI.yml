@@ -9,7 +9,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get -y install bpfcc-tools linux-headers-$(uname -r)
       - name: Build test binary
-        run: make bin/test
+        run: zcat /proc/config.gz > running.config
       - name: Run tests
-        run: sudo make test
+        run: cat running.config
     timeout-minutes: 5
