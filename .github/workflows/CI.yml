@@ -7,7 +7,7 @@ jobs:
       - name: Add repositories
         run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main -y
       - name: Apt-get update
-        run: sudo apt-get update
+        run: sudo apt-get update --allow-unauthenticated
       - name: Install dependencies
         run: sudo apt-get install libgtest-dev libelf-dev clang-17
       - name: Install libbpf
