@@ -117,15 +117,15 @@ struct write_exit_ctx {
 
 SEC("tp/syscalls/sys_enter_write")
 int handle_write_enter(struct write_enter_ctx *ctx) {
-  if (!is_process_traced()) return 0;
+  // if (!is_process_traced()) return 0;
 
-  pid_t pid = bpf_get_current_pid_tgid();
+  // pid_t pid = bpf_get_current_pid_tgid();
 
-  struct write_data data = {
-    .buf = ctx->buf,
-    .fd = ctx->fd,
-  };
-  bpf_map_update_elem(&writes, &pid, &data, BPF_ANY);
+  // struct write_data data = {
+  //   .buf = ctx->buf,
+  //   .fd = ctx->fd,
+  // };
+  // bpf_map_update_elem(&writes, &pid, &data, BPF_ANY);
   return 0;
 }
 
