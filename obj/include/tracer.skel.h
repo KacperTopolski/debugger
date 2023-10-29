@@ -101,15 +101,27 @@ tracer__open_and_load(void)
 	struct tracer *obj;
 	int err;
 
+	#ifdef __cplusplus
+	std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+	#endif
+
 	obj = tracer__open();
 	if (!obj)
 		return NULL;
+
+	#ifdef __cplusplus
+	std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+	#endif
+
 	err = tracer__load(obj);
 	if (err) {
 		tracer__destroy(obj);
 		errno = -err;
 		return NULL;
 	}
+	#ifdef __cplusplus
+	std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+	#endif
 	return obj;
 }
 
