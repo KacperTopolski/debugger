@@ -1,0 +1,15 @@
+name: CI
+on: [push]
+jobs:
+  check:
+    runs-on: arch-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: sudo pacman -S bpf clang compiler-rt llvm llvm-libs spdlog tclap gtest
+      - name: Build test binary
+        run: make bin/test
+      - name: Run tests
+        run: sudo make test
+    timeout-minutes: 5
