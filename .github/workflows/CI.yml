@@ -5,11 +5,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install dependencies
-        run: sudo apt-get install libbpf-dev libgtest-dev clang-15
-      - name: ls som
-        run: sudo ls /sys/kernel/debug/tracing/available_events
-      - name: ls som2
-        run: sudo ls /sys/kernel/tracing/events
+        run: sudo apt-get install libgtest-dev clang-15
+        # run: sudo apt-get install libbpf-dev libgtest-dev clang-15
+      - name: Install libbpf
+        run: |
+          sudo git clone https://github.com/libbpf/libbpf
+          sudo cd libbpf/src
+          sudo PKG_CONFIG_PATH=/build/root/lib64/pkgconfig DESTDIR=/build/root make install
+          sudo cd ../..
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Build test binary
