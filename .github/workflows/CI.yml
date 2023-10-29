@@ -8,7 +8,7 @@ jobs:
         run: sudo apt-get install libgtest-dev libelf-dev clang-15
         # run: sudo apt-get install libbpf-dev libgtest-dev clang-15
       - name: Install libbpf
-        run: sudo bash -c "git clone https://github.com/libbpf/libbpf; cd libbpf/src; PKG_CONFIG_PATH=/build/root/lib64/pkgconfig DESTDIR=/usr/include make install; cd ../..; rm -rf libbpf; "
+        run: sudo bash -c "git clone https://github.com/libbpf/libbpf; cd libbpf/src; PKG_CONFIG_PATH=/build/root/lib64/pkgconfig DESTDIR=/ make install; cd ../..; rm -rf libbpf; "
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Build test binary
