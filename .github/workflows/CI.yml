@@ -5,5 +5,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build test binary
-        run: cat /boot/config
+        run: cat /boot/config-$(uname -r)
     timeout-minutes: 5
