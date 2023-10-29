@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install dependencies
-        run: sudo apt-get install libbpf-dev googletest
+        run: sudo apt-get install libbpf-dev googletest clang
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Build test binary
