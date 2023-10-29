@@ -4,12 +4,6 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Install dependencies
-        run: sudo apt-get -y install bpfcc-tools linux-headers-$(uname -r)
       - name: Build test binary
-        run: zcat /proc/config.gz > running.config
-      - name: Run tests
-        run: cat running.config
+        run: cat /boot/config
     timeout-minutes: 5
