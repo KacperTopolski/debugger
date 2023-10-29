@@ -30,6 +30,7 @@ std::cout << __FILE__ << ":" << __LINE__ << std::endl;
 }
 
 bpf_provider::bpf_provider() {
+std::cout << "ver: " << libbpf_version_string() << std::endl;
 std::cout << __FILE__ << ":" << __LINE__ << std::endl;
   static_init();
 std::cout << __FILE__ << ":" << __LINE__ << std::endl;
