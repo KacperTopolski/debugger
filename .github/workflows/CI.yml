@@ -4,12 +4,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Add repositories
-        run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main -y
-      - name: Apt-get update
-        run: sudo apt-get update --allow-unauthenticated
+      - name: Install clang
+        run: sudo bash -c "wget https://apt.llvm.org/llvm.sh; chmod u+x llvm.sh; echo | ./llvm.sh 17; rm llvm.sh; "
       - name: Install dependencies
-        run: sudo apt-get install libgtest-dev libelf-dev clang-17
+        run: sudo apt-get install libgtest-dev libelf-dev
       - name: Install libbpf
         run: sudo bash -c "git clone https://github.com/libbpf/libbpf; cd libbpf/src; git reset --hard 1728e3e4bef0e138ea95ffe62163eb9a6ac6fa32; sudo LIBDIR="/usr/lib" make install; cd ../..; rm -rf libbpf; "
       - name: Checkout code
