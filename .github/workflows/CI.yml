@@ -6,7 +6,6 @@ jobs:
     steps:
       - name: Install dependencies
         run: sudo apt-get install libgtest-dev libelf-dev clang-15
-        # run: sudo apt-get install libbpf-dev libgtest-dev clang-15
       - name: Install libbpf
         run: sudo bash -c "git clone https://github.com/libbpf/libbpf; cd libbpf/src; git reset --hard 1728e3e4bef0e138ea95ffe62163eb9a6ac6fa32; sudo LIBDIR="/usr/lib" make install; cd ../..; rm -rf libbpf; "
       - name: Checkout code
