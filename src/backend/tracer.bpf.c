@@ -125,7 +125,8 @@ int handle_write_enter(struct write_enter_ctx *ctx) {
     .buf = ctx->buf,
     .fd = ctx->fd,
   };
-  bpf_printk("aa");
+  if (&writes == NULL || &pid == NULL || &data == NULL)
+    return 0;
   bpf_map_update_elem(&writes, &pid, &data, BPF_ANY);
   return 0;
 }

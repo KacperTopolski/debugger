@@ -4,8 +4,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Install clang
-        run: sudo bash -c "wget https://apt.llvm.org/llvm.sh; chmod u+x llvm.sh; echo | ./llvm.sh 17; rm llvm.sh; "
+      # - name: Install clang
+      #   run: sudo bash -c "wget https://apt.llvm.org/llvm.sh; chmod u+x llvm.sh; echo | ./llvm.sh 17; rm llvm.sh; "
       - name: Install dependencies
         run: sudo apt-get install libgtest-dev libelf-dev
       - name: Install libbpf
