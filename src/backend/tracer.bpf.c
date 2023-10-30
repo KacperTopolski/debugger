@@ -22,7 +22,7 @@ struct {
 
 struct write_data {
   const char *buf;
-  u64 fd;
+  int fd, pad;
 };
 
 struct {
