@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Build binaries
-        run: sudo make CXX=clang-15 bin/test
+        run: sudo make CXX=clang++-15 bin/test
       - name: Run tests
         run: sudo make test
     timeout-minutes: 2
