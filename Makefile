@@ -1,5 +1,9 @@
-CXX ?= clang++
-CC ?= clang
+# This is a hack, you cannot inline these variables
+CXX_DEFAULT ?= clang++
+CC_DEFAULT ?= clang
+
+CXX := $(CXX_DEFAULT)
+CC := $(CC_DEFAULT)
 
 OBJ_DIR := obj
 BIN_DIR := bin
