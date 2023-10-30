@@ -9,7 +9,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get install libgtest-dev libelf-dev
       - name: Install libbpf
-        run: sudo bash -c "git clone https://github.com/libbpf/libbpf; cd libbpf/src; git reset --hard v1.2.2; sudo make LIBDIR="/usr/lib" install; cd ../..; rm -rf libbpf; "
+        run: sudo bash -c "git clone https://github.com/libbpf/libbpf; cd libbpf/src; git reset --hard v1.2.2; sudo make LIBDIR="/usr/lib" install; rm -rf ../../libbpf; "
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Build binaries
