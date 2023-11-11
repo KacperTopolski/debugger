@@ -14,11 +14,11 @@ jobs:
           cd libbpf/src
           git reset --hard v1.2.2
           sudo make LIBDIR="/usr/lib" install
-          rm -rf ../../libbpf
+          sudo rm -rf ../../libbpf
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Build binaries
-        run: sudo make CXX=clang++-15 bin/test
+        run: make CXX=clang++-15 bin/test
       - name: Run tests
         run: sudo make test
     timeout-minutes: 2
