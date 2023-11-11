@@ -4,12 +4,12 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Install clang-17
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod u+x llvm.sh
-          echo | sudo ./llvm.sh 17
-          rm llvm.sh
+      # - name: Install clang-17
+      #   run: |
+      #     wget https://apt.llvm.org/llvm.sh
+      #     chmod u+x llvm.sh
+      #     echo | sudo ./llvm.sh 17
+      #     rm llvm.sh
       - name: Install other dependencies
         run: sudo apt-get install libgtest-dev libelf-dev
       - name: Install libbpf
