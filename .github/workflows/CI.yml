@@ -8,7 +8,7 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod u+x llvm.sh
-          sudo echo | ./llvm.sh 17
+          echo | sudo ./llvm.sh 17
           rm llvm.sh
       - name: Install other dependencies
         run: sudo apt-get install libgtest-dev libelf-dev
